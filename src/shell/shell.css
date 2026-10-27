@@ -1,0 +1,203 @@
+:root {
+  --sidebar: #0f1a20;
+  --sidebar-hover: #1b2a32;
+  --text: #e9edef;
+  --muted: #8696a0;
+  --accent: #1fa855;
+  --danger: #e53935;
+  --card: #1f2c34;
+  --field: #2a3942;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--sidebar);
+  color: var(--text);
+  font: 14px/1.4 "Segoe UI", system-ui, sans-serif;
+  user-select: none;
+}
+
+#sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 0;
+  border-right: 1px solid #ffffff10;
+}
+
+#accounts {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  overflow-y: auto;
+  width: 100%;
+  scrollbar-width: none;
+}
+
+.account {
+  position: relative;
+  width: 64px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+.account::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 4px;
+  height: 0;
+  border-radius: 0 4px 4px 0;
+  background: var(--text);
+  transform: translateY(-50%);
+  transition: height .15s ease;
+}
+.account:hover::before { height: 16px; }
+.account.active::before { height: 32px; }
+
+.avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--c, var(--accent));
+  color: #fff;
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: .5px;
+  transition: border-radius .15s ease, filter .15s ease;
+  filter: saturate(.75) brightness(.85);
+}
+.account:hover .avatar,
+.account.active .avatar { border-radius: 14px; filter: none; }
+.account:focus-visible { outline: none; }
+.account:focus-visible .avatar { box-shadow: 0 0 0 2px var(--sidebar), 0 0 0 4px var(--text); }
+
+.badge {
+  position: absolute;
+  top: -2px;
+  right: 6px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 10px;
+  border: 2px solid var(--sidebar);
+  background: var(--danger);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+
+.tools {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 10px;
+}
+.tool {
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: background .15s ease, color .15s ease, border-radius .15s ease;
+}
+.tool:hover, .tool:focus-visible { background: var(--sidebar-hover); color: var(--text); border-radius: 14px; outline: none; }
+.tool svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+#placeholder {
+  position: fixed;
+  inset: 0 0 0 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--muted);
+}
+#placeholder img { opacity: .6; }
+
+#modal {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: #000a;
+  padding: 16px;
+}
+#modal[hidden] { display: none; }
+
+.card {
+  width: min(360px, 100%);
+  background: var(--card);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 12px 40px #0008;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  user-select: text;
+}
+.card h2 { margin: 0 0 8px; font-size: 18px; font-weight: 600; }
+.card label, .card .label { color: var(--muted); font-size: 12px; margin-top: 4px; }
+.card input {
+  height: 38px;
+  border: 0;
+  border-bottom: 2px solid var(--accent);
+  border-radius: 6px 6px 0 0;
+  background: var(--field);
+  color: var(--text);
+  padding: 0 10px;
+  font: inherit;
+  outline: none;
+}
+
+.colors { display: flex; flex-wrap: wrap; gap: 8px; }
+.swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 0;
+  cursor: pointer;
+  background: var(--c);
+}
+.swatch[aria-checked="true"] { box-shadow: 0 0 0 2px var(--card), 0 0 0 4px var(--text); }
+.swatch:focus-visible { outline: 2px dashed var(--text); outline-offset: 3px; }
+
+.actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+.actions button {
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 18px;
+  border: 1px solid #ffffff22;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.actions button:hover { background: #ffffff10; }
+.actions .primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.actions .primary:hover { filter: brightness(1.1); background: var(--accent); }
