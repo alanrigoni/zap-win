@@ -3,6 +3,16 @@
 Cliente não oficial do WhatsApp Web para Windows, inspirado no [ZapZap](https://rtosta.com/zapzap/).
 Instala como um programa normal (menu Iniciar, atalho na área de trabalho, desinstalador em "Aplicativos").
 
+> [!IMPORTANT]
+> **Projeto não oficial.** O ZapWin não tem nenhuma relação com o WhatsApp LLC ou a Meta Platforms, Inc.,
+> nem é endossado ou mantido por eles. "WhatsApp" é marca registrada da WhatsApp LLC e aparece aqui
+> só para indicar com qual serviço o app funciona.
+>
+> O ZapWin apenas abre o [WhatsApp Web](https://web.whatsapp.com) oficial numa janela própria: não altera o
+> serviço, não automatiza mensagens e não coleta seus dados. Suas conversas continuam indo direto do seu
+> computador para os servidores do WhatsApp, e o uso continua sujeito aos
+> [Termos de Serviço do WhatsApp](https://www.whatsapp.com/legal/terms-of-service).
+
 ## Recursos
 
 - Várias contas do WhatsApp lado a lado (barra lateral), cada uma com seus próprios dados
