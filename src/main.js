@@ -9,6 +9,7 @@ const crypto = require('node:crypto');
 
 const APP_ID = 'com.alanrigoni.zapwin';
 const WA_URL = 'https://web.whatsapp.com/';
+const WA_ORIGIN = 'https://web.whatsapp.com';
 const SIDEBAR_WIDTH = 64;
 const ICON_PATH = path.join(__dirname, 'assets', 'icon.png');
 const PALETTE = ['#1FA855', '#2F80ED', '#9B51E0', '#EB5757', '#F2994A', '#00A3A3', '#E84393', '#6C7A89'];
@@ -205,14 +206,18 @@ function setupSession(ses) {
   configuredSessions.add(ses);
   ses.setUserAgent(app.userAgentFallback);
 
-  ses.setPermissionRequestHandler((_wc, permission, callback) => {
-    if (permission === 'notifications') return callback(!!config.settings.notifications);
-    callback(PERMISSIONS.has(permission));
-  });
-  ses.setPermissionCheckHandler((_wc, permission) => {
+  // Só o próprio WhatsApp Web recebe permissões. Quadros internos (iframes) de outros sites
+  // ou qualquer página que não seja o WhatsApp são sempre negados.
+  const allow = (wc, permission, requestingUrl) => {
+    if (!isWhatsAppOrigin(requestingUrl)) return false;
+    if (wc && !isWhatsAppOrigin(wc.getURL())) return false;
     if (permission === 'notifications') return !!config.settings.notifications;
     return PERMISSIONS.has(permission);
+  };
+  ses.setPermissionRequestHandler((wc, permission, callback, details) => {
+    callback(allow(wc, permission, details?.requestingUrl));
   });
+  ses.setPermissionCheckHandler((wc, permission, requestingOrigin) => allow(wc, permission, requestingOrigin));
 
   const langs = ['pt-BR', 'en-US'].filter((l) => ses.availableSpellCheckerLanguages.includes(l));
   if (langs.length) ses.setSpellCheckerLanguages(langs);
@@ -249,6 +254,13 @@ function createView(acc) {
       openExternal(url);
     }
   });
+  // Redirecionamentos do servidor não passam pelo 'will-navigate'.
+  wc.on('will-redirect', (e) => {
+    if (e.isMainFrame && !isWhatsAppUrl(e.url)) {
+      e.preventDefault();
+      openExternal(e.url);
+    }
+  });
   wc.on('context-menu', (_e, params) => showWebContextMenu(wc, params));
   wc.on('render-process-gone', (_e, details) => {
     if (details.reason === 'clean-exit') return;
@@ -262,6 +274,14 @@ function createView(acc) {
 function isWhatsAppUrl(url) {
   try {
     return new URL(url).hostname === 'web.whatsapp.com';
+  } catch {
+    return false;
+  }
+}
+
+function isWhatsAppOrigin(url) {
+  try {
+    return new URL(url).origin === WA_ORIGIN;
   } catch {
     return false;
   }
