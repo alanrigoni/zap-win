@@ -7,11 +7,16 @@
   "author": "Alan Rigoni",
   "license": "MIT",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alanrigoni/zap-win.git"
+  },
   "scripts": {
     "start": "electron .",
     "icon": "node scripts/make-icon.js",
     "pack": "electron-builder --win dir",
-    "dist": "electron-builder --win nsis"
+    "dist": "electron-builder --win nsis --publish never",
+    "release": "electron-builder --win nsis --publish always"
   },
   "build": {
     "appId": "com.alanrigoni.zapwin",
@@ -19,6 +24,14 @@
     "files": [
       "src/**/*",
       "package.json"
+    ],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "alanrigoni",
+        "repo": "zap-win",
+        "releaseType": "release"
+      }
     ],
     "electronFuses": {
       "runAsNode": false,
@@ -50,5 +63,8 @@
   "devDependencies": {
     "electron": "^45.0.0",
     "electron-builder": "^26.18.0"
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.11"
   }
 }

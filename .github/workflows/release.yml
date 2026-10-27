@@ -1,0 +1,39 @@
+# Gera o instalador e publica uma release no GitHub quando uma tag "v*" é enviada.
+# Exemplo: altere "version" no package.json para 1.0.1, faça commit e rode
+#   git tag v1.0.1 && git push origin main --tags
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Conferir versão da tag
+        shell: bash
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          if [ "v$VERSION" != "$GITHUB_REF_NAME" ]; then
+            echo "A tag $GITHUB_REF_NAME não bate com a versão do package.json (v$VERSION)."
+            exit 1
+          fi
+
+      - run: npm ci
+
+      - name: Gerar instalador e publicar release
+        run: npm run release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

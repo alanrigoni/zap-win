@@ -1,8 +1,9 @@
 'use strict';
 const {
   app, BrowserWindow, WebContentsView, Tray, Menu, nativeImage,
-  ipcMain, shell, dialog, clipboard, screen,
+  ipcMain, shell, dialog, clipboard, screen, Notification,
 } = require('electron');
+const { autoUpdater } = require('electron-updater');
 const path = require('node:path');
 const fs = require('node:fs');
 const crypto = require('node:crypto');
@@ -97,6 +98,7 @@ function start() {
     createWindow();
     createTray();
     rebuildMenus();
+    setupUpdater();
   });
 }
 
@@ -489,7 +491,7 @@ function rebuildMenus() {
     },
     { label: '&Contas', submenu: accountItems },
     { label: 'C&onfigurações', submenu: settingsItems() },
-    { label: 'Aj&uda', submenu: [{ label: 'Sobre o ZapWin', click: showAbout }] },
+    { label: 'Aj&uda', submenu: [updateMenuItem(), { type: 'separator' }, { label: 'Sobre o ZapWin', click: showAbout }] },
   ]));
 
   tray?.setContextMenu(Menu.buildFromTemplate([
@@ -503,6 +505,7 @@ function rebuildMenus() {
     })),
     { type: 'separator' },
     { label: 'Configurações', submenu: settingsItems() },
+    ...(updateReady ? [updateMenuItem()] : []),
     { type: 'separator' },
     { label: 'Sair', click: quit },
   ]));
@@ -525,6 +528,7 @@ function showSettingsMenu() {
     { type: 'separator' },
     { label: 'Nova conta…', click: () => promptAccount('add') },
     { label: 'Recarregar conta atual', click: reloadActive },
+    updateMenuItem(),
     { label: 'Sobre o ZapWin', click: showAbout },
     { type: 'separator' },
     { label: 'Sair', click: quit },
@@ -579,6 +583,103 @@ function showAbout() {
     detail: 'Cliente não oficial do WhatsApp Web para Windows, inspirado no ZapZap.\nNão tem afiliação com o WhatsApp ou a Meta.',
     icon: nativeImage.createFromPath(ICON_PATH),
   });
+}
+
+// ---------- Atualização automática (GitHub Releases) ----------
+
+const UPDATE_INTERVAL = 6 * 60 * 60 * 1000;
+let manualCheck = false;
+let updateReady = null; // versão baixada e pronta para instalar
+
+// Janelas de aviso só ficam presas à janela principal quando ela está visível.
+const dialogParent = () => (win && !win.isDestroyed() && win.isVisible() ? win : undefined);
+function message(opts) {
+  const parent = dialogParent();
+  return parent ? dialog.showMessageBox(parent, opts) : dialog.showMessageBox(opts);
+}
+
+function setupUpdater() {
+  if (!app.isPackaged) return;
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+
+  autoUpdater.on('update-available', (info) => {
+    if (manualCheck) {
+      message({ type: 'info', title: 'Atualização', message: `Baixando a versão ${info.version}…`, detail: 'Você será avisado quando ela estiver pronta.' });
+    }
+    manualCheck = false;
+  });
+  autoUpdater.on('update-not-available', () => {
+    if (manualCheck) {
+      message({ type: 'info', title: 'Atualização', message: 'Você já está usando a versão mais recente.', detail: `ZapWin ${app.getVersion()}` });
+    }
+    manualCheck = false;
+  });
+  autoUpdater.on('error', (err) => {
+    console.error('Falha na atualização:', err);
+    if (manualCheck) {
+      message({ type: 'error', title: 'Atualização', message: 'Não foi possível verificar atualizações.', detail: String(err?.message || err) });
+    }
+    manualCheck = false;
+  });
+  autoUpdater.on('update-downloaded', (info) => {
+    updateReady = info.version;
+    rebuildMenus();
+    if (Notification.isSupported()) {
+      const n = new Notification({
+        title: 'Atualização do ZapWin pronta',
+        body: `A versão ${info.version} será instalada quando você fechar o app. Clique para reiniciar agora.`,
+        icon: ICON_PATH,
+      });
+      n.on('click', installUpdate);
+      n.show();
+    }
+    if (dialogParent()) askToInstall();
+  });
+
+  checkForUpdates(false);
+  setInterval(() => checkForUpdates(false), UPDATE_INTERVAL);
+}
+
+function checkForUpdates(manual) {
+  if (!app.isPackaged) {
+    if (manual) message({ type: 'info', title: 'Atualização', message: 'A atualização automática só funciona na versão instalada.' });
+    return;
+  }
+  if (updateReady) {
+    if (manual) askToInstall();
+    return;
+  }
+  manualCheck = manual;
+  autoUpdater.checkForUpdates().catch(() => { /* tratado no evento 'error' */ });
+}
+
+async function askToInstall() {
+  const { response } = await message({
+    type: 'info',
+    buttons: ['Reiniciar agora', 'Depois'],
+    defaultId: 0,
+    cancelId: 1,
+    title: 'Atualização pronta',
+    message: `A versão ${updateReady} do ZapWin foi baixada.`,
+    detail: 'Reinicie para instalar agora, ou ela será instalada automaticamente quando você sair do app.',
+  });
+  if (response === 0) installUpdate();
+}
+
+function installUpdate() {
+  isQuitting = true;
+  saveWindowState();
+  clearTimeout(saveTimer);
+  writeConfig();
+  // Instalação silenciosa, abrindo o app de novo ao terminar.
+  autoUpdater.quitAndInstall(true, true);
+}
+
+function updateMenuItem() {
+  return updateReady
+    ? { label: `Reiniciar e atualizar para ${updateReady}`, click: installUpdate }
+    : { label: 'Verificar atualizações…', click: () => checkForUpdates(true) };
 }
 
 // ---------- Bandeja ----------

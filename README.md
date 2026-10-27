@@ -11,6 +11,7 @@ Instala como um programa normal (menu Iniciar, atalho na área de trabalho, desi
 - Notificações nativas do Windows; clicar abre a conta certa
 - Iniciar com o Windows (minimizado na bandeja)
 - Corretor ortográfico em português e inglês, zoom por conta, links abrem no navegador
+- Atualização automática pelas [releases do GitHub](https://github.com/alanrigoni/zap-win/releases)
 
 ## Atalhos
 
@@ -41,3 +42,17 @@ npm run icon       # regenera o ícone
 > (o VS Code define essa variável e ela faz o Electron rodar como Node puro).
 
 Os dados ficam em `%APPDATA%\ZapWin`.
+
+## Publicar uma nova versão
+
+1. Altere `version` no `package.json` (ex.: `1.0.1`) e faça commit.
+2. Crie e envie a tag com o mesmo número:
+   ```sh
+   git tag v1.0.1
+   git push origin main --tags
+   ```
+3. O GitHub Actions ([.github/workflows/release.yml](.github/workflows/release.yml)) gera o instalador e publica a release.
+   Quem já tem o app instalado recebe a atualização sozinho (verificação ao abrir e a cada 6 horas).
+
+Lembre de atualizar o Electron de tempos em tempos (`npm install electron@latest`) e publicar uma nova versão,
+para receber as correções de segurança do Chromium.
